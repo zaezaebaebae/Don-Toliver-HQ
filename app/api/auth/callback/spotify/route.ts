@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
@@ -36,17 +37,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(`${baseUrl}?error=token_exchange_failed`);
     }
 
-    const response = NextResponse.redirect(`${baseUrl}?spotify=connected`);
-
-    // Store the access token in an HTTP-only cookie for session persistence
-    response.cookies.set("spotify_access_token", data.access_token, {
+    const cookieStore = await cookies();
+    cookieStore.set("spotify_access_token", data.access_token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       maxAge: data.expires_in,
       path: "/",
+      sameSite: "lax",
     });
 
-    return response;
+    return NextResponse.redirect(`${baseUrl}?spotify=connected`);
   } catch (err) {
     console.error("Spotify Auth Callback Error:", err);
     return NextResponse.redirect(`${baseUrl}?error=server_error`);
