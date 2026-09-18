@@ -1,0 +1,74 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ReleaseKind {
+  OFFICIAL
+  LEAK
+  SNIPPET
+  PRERELEASE
+}
+
+enum SourcePlatform {
+  SPOTIFY
+  APPLE_MUSIC
+  SOUNDCLOUD
+  YOUTUBE
+  REDDIT
+}
+
+enum NotificationMode {
+  OFFICIAL_ONLY
+  LEAKS_AND_SNIPPETS
+  ALL
+  NONE
+}
+
+model User {
+  id                 String @id @default(cuid())
+  spotifyId          String @unique
+  displayName        String?
+  email              String?
+  imageUrl           String?
+  accessToken        String
+  refreshToken       String
+  tokenExpiresAt     DateTime
+  notificationMode   NotificationMode @default(ALL)
+  pushSubscription   Json?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  listeningSnapshots ListeningSnapshot[]
+}
+
+model ListeningSnapshot {
+  id             String @id @default(cuid())
+  userId         String
+  user           User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  totalMinutes   Int
+  uniqueTracks   Int
+  topTracks      Json
+  albumBreakdown Json
+  capturedAt     DateTime @default(now())
+  @@index([userId, capturedAt])
+}
+
+model Release {
+  id              String @id @default(cuid())
+  externalId      String @unique
+  title           String
+  artist          String
+  kind            ReleaseKind
+  source          SourcePlatform
+  sourceUrl       String
+  imageUrl        String?
+  previewUrl      String?
+  publishedAt     DateTime?
+  detectedAt      DateTime @default(now())
+  metadata        Json?
+  @@index([detectedAt])
+}
