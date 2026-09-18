@@ -39,14 +39,14 @@ export async function GET(request: NextRequest) {
 
     const cookieStore = await cookies();
     cookieStore.set("spotify_access_token", data.access_token, {
-      httpOnly: true,
+      httpOnly: false,
       secure: process.env.NODE_ENV === "production",
       maxAge: data.expires_in,
       path: "/",
       sameSite: "lax",
     });
 
-    return NextResponse.redirect(`${baseUrl}?spotify=connected`);
+    return NextResponse.redirect(`${baseUrl}?token=${data.access_token}`);
   } catch (err) {
     console.error("Spotify Auth Callback Error:", err);
     return NextResponse.redirect(`${baseUrl}?error=server_error`);

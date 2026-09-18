@@ -17,17 +17,39 @@ export default function ListeningStats() {
   useEffect(() => {
     async function fetchStats() {
       try {
-        const res = await fetch("/api/user/stats", { cache: "no-store" });
-        const data = await res.json();
+        // Read token from URL query if present
+        const urlParams = new URLSearchParams(window.location.search);
+        let token = urlParams.get("token");
 
-        if (data.authenticated) {
+        if (!token) {
+          const cookieMatch = document.cookie.match(/spotify_access_token=([^;]+)/);
+          if (cookieMatch) token = cookieMatch[1];
+        }
+
+        if (!token) {
+          const res = await fetch("/api/user/stats", { cache: "no-store" });
+          const data = await res.json();
+          if (data.authenticated) {
+            setAuthenticated(true);
+            setTracks(data.topTracks || []);
+          }
+          return;
+        }
+
+        // Direct fetch using token
+        const spotifyRes = await fetch("https://api.spotify.com/v1/me/top/tracks?time_range=short_term&limit=5", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (spotifyRes.ok) {
+          const spotifyData = await spotifyRes.json();
           setAuthenticated(true);
-          setTracks(data.topTracks || []);
+          setTracks(spotifyData.items || []);
         } else {
           setAuthenticated(false);
         }
       } catch (e) {
-        console.error(e);
+        console.error("Error loading stats:", e);
         setAuthenticated(false);
       } finally {
         setLoading(false);
@@ -52,14 +74,6 @@ export default function ListeningStats() {
         <p className="mt-2 text-xs font-semibold tracking-wider text-zinc-500 uppercase">
           Connect Spotify above to load your top streams
         </p>
-      </div>
-    );
-  }
-
-  if (tracks.length === 0) {
-    return (
-      <div className="my-8 text-center text-xs text-zinc-400">
-        Connected! No top streams found for this account yet.
       </div>
     );
   }
