@@ -7,15 +7,27 @@ export default function Home() {
       {/* Birthday Splash Gate */}
       <BirthdayGate />
 
-      {/* Main Content Container */}
+      {/* Main Container */}
       <div className="mx-auto max-w-5xl px-4 py-8">
-        <header className="mb-8 border-b border-zinc-800 pb-6 text-center">
-          <h1 className="text-4xl font-extrabold tracking-tight text-red-600 sm:text-6xl">
-            DON TOLIVER HQ
-          </h1>
-          <p className="mt-2 text-zinc-400">
-            Unreleased Vault • Discography Tracker • Live Feed
-          </p>
+        
+        {/* Navigation / Header Bar */}
+        <header className="mb-8 flex flex-col items-center justify-between gap-4 border-b border-zinc-800 pb-6 sm:flex-row">
+          <div className="text-center sm:text-left">
+            <h1 className="text-3xl font-extrabold tracking-wider text-red-600 sm:text-5xl">
+              DON TOLIVER HQ
+            </h1>
+            <p className="mt-1 text-xs text-zinc-400 sm:text-sm">
+              Unreleased Vault • Discography Tracker • Live Feed
+            </p>
+          </div>
+
+          {/* Spotify Auth Link Button */}
+          <a
+            href="/api/auth/login"
+            className="rounded-full bg-emerald-500 px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-black transition hover:bg-emerald-400 hover:shadow-[0_0_15px_rgba(16,185,129,0.5)]"
+          >
+            CONNECT SPOTIFY
+          </a>
         </header>
 
         {/* Live Leak & Unreleased Feed Component */}
