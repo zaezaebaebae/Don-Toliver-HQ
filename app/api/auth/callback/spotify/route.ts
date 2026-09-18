@@ -11,5 +11,44 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${baseUrl}?error=spotify_denied`);
   }
 
-  return NextResponse.redirect(`${baseUrl}?spotify=connected`);
+  const clientId = process.env.SPOTIFY_CLIENT_ID;
+  const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
+  const redirectUri = process.env.SPOTIFY_REDIRECT_URI || `${baseUrl}/api/auth/callback/spotify`;
+
+  try {
+    const tokenResponse = await fetch("https://accounts.spotify.com/api/token", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Authorization: `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString("base64")}`,
+      },
+      body: new URLSearchParams({
+        grant_type: "authorization_code",
+        code,
+        redirect_uri: redirectUri,
+      }),
+    });
+
+    const data = await tokenResponse.json();
+
+    if (!tokenResponse.ok) {
+      console.error("Token exchange failed:", data);
+      return NextResponse.redirect(`${baseUrl}?error=token_exchange_failed`);
+    }
+
+    const response = NextResponse.redirect(`${baseUrl}?spotify=connected`);
+
+    // Store the access token in an HTTP-only cookie for session persistence
+    response.cookies.set("spotify_access_token", data.access_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      maxAge: data.expires_in,
+      path: "/",
+    });
+
+    return response;
+  } catch (err) {
+    console.error("Spotify Auth Callback Error:", err);
+    return NextResponse.redirect(`${baseUrl}?error=server_error`);
+  }
 }
