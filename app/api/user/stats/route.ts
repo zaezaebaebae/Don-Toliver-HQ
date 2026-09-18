@@ -3,27 +3,47 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
   const cookieStore = await cookies();
-  const token = cookieStore.get("spotify_access_token")?.value;
+  let token = cookieStore.get("spotify_access_token")?.value;
+
+  // Fallback to reading Bearer token from header if set by client
+  if (!token) {
+    const authHeader = request.headers.get("authorization");
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      token = authHeader.substring(7);
+    }
+  }
 
   if (!token) {
-    return NextResponse.json({ authenticated: false, reason: "No access token cookie found" }, { status: 401 });
+    return NextResponse.json({ authenticated: false, reason: "No access token found" }, { status: 401 });
   }
 
   try {
-    const res = await fetch("https://api.spotify.com/v1/me/top/tracks?time_range=short_term&limit=5", {
+    // Try fetching medium_term (last 6 months) first, falling back to long_term
+    let res = await fetch("https://api.spotify.com/v1/me/top/tracks?time_range=medium_term&limit=5", {
       headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
     });
 
     if (!res.ok) {
-      const errBody = await res.text();
-      console.error("Spotify API Error Response:", errBody);
-      return NextResponse.json({ authenticated: false, error: errBody }, { status: res.status });
+      const errorText = await res.text();
+      return NextResponse.json({ authenticated: false, error: errorText }, { status: res.status });
     }
 
-    const data = await res.json();
-    return NextResponse.json({ authenticated: true, topTracks: data.items });
+    let data = await res.json();
+
+    // If medium_term is empty, fallback to long_term
+    if (!data.items || data.items.length === 0) {
+      res = await fetch("https://api.spotify.com/v1/me/top/tracks?time_range=long_term&limit=5", {
+        headers: { Authorization: `Bearer ${token}` },
+        cache: "no-store",
+      });
+      if (res.ok) {
+        data = await res.json();
+      }
+    }
+
+    return NextResponse.json({ authenticated: true, topTracks: data.items || [] });
   } catch (err) {
-    console.error("Failed fetching Spotify stats:", err);
-    return NextResponse.json({ authenticated: false, error: "Server error" }, { status: 500 });
+    return NextResponse.json({ authenticated: false, error: "Server connection error" }, { status: 500 });
   }
 }

@@ -13,43 +13,37 @@ export default function ListeningStats() {
   const [loading, setLoading] = useState(true);
   const [authenticated, setAuthenticated] = useState(false);
   const [tracks, setTracks] = useState<Track[]>([]);
+  const [errorMsg, setErrorMsg] = useState("");
 
   useEffect(() => {
     async function fetchStats() {
       try {
-        // Read token from URL query if present
         const urlParams = new URLSearchParams(window.location.search);
-        let token = urlParams.get("token");
+        const token = urlParams.get("token");
 
-        if (!token) {
-          const cookieMatch = document.cookie.match(/spotify_access_token=([^;]+)/);
-          if (cookieMatch) token = cookieMatch[1];
+        const headers: HeadersInit = {};
+        if (token) {
+          headers["Authorization"] = `Bearer ${token}`;
         }
 
-        if (!token) {
-          const res = await fetch("/api/user/stats", { cache: "no-store" });
-          const data = await res.json();
-          if (data.authenticated) {
-            setAuthenticated(true);
-            setTracks(data.topTracks || []);
-          }
-          return;
-        }
-
-        // Direct fetch using token
-        const spotifyRes = await fetch("https://api.spotify.com/v1/me/top/tracks?time_range=short_term&limit=5", {
-          headers: { Authorization: `Bearer ${token}` },
+        const res = await fetch("/api/user/stats", {
+          headers,
+          cache: "no-store",
         });
 
-        if (spotifyRes.ok) {
-          const spotifyData = await spotifyRes.json();
+        const data = await res.json();
+
+        if (data.authenticated) {
           setAuthenticated(true);
-          setTracks(spotifyData.items || []);
+          setTracks(data.topTracks || []);
         } else {
           setAuthenticated(false);
+          if (data.reason || data.error) {
+            setErrorMsg(data.reason || "Authentication required");
+          }
         }
       } catch (e) {
-        console.error("Error loading stats:", e);
+        console.error(e);
         setAuthenticated(false);
       } finally {
         setLoading(false);
@@ -62,7 +56,7 @@ export default function ListeningStats() {
   if (loading) {
     return (
       <div className="py-8 text-center text-xs text-zinc-500 animate-pulse">
-        Fetching Spotify Top Streams...
+        Syncing Spotify Stats...
       </div>
     );
   }
@@ -74,6 +68,15 @@ export default function ListeningStats() {
         <p className="mt-2 text-xs font-semibold tracking-wider text-zinc-500 uppercase">
           Connect Spotify above to load your top streams
         </p>
+        {errorMsg && <p className="mt-1 text-[10px] text-zinc-600">{errorMsg}</p>}
+      </div>
+    );
+  }
+
+  if (tracks.length === 0) {
+    return (
+      <div className="my-8 text-center text-xs text-zinc-400">
+        Connected! Listening history is still warming up for this account.
       </div>
     );
   }
