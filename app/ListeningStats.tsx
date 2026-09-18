@@ -13,7 +13,6 @@ export default function ListeningStats() {
   const [loading, setLoading] = useState(true);
   const [authenticated, setAuthenticated] = useState(false);
   const [tracks, setTracks] = useState<Track[]>([]);
-  const [errorMsg, setErrorMsg] = useState("");
 
   useEffect(() => {
     async function fetchStats() {
@@ -26,7 +25,7 @@ export default function ListeningStats() {
           headers["Authorization"] = `Bearer ${token}`;
         }
 
-        const res = await fetch("/api/user/stats", {
+        const res = await fetch(`/api/user/stats?t=${Date.now()}`, {
           headers,
           cache: "no-store",
         });
@@ -38,12 +37,9 @@ export default function ListeningStats() {
           setTracks(data.topTracks || []);
         } else {
           setAuthenticated(false);
-          if (data.reason || data.error) {
-            setErrorMsg(data.reason || "Authentication required");
-          }
         }
       } catch (e) {
-        console.error(e);
+        console.error("Stats load failed:", e);
         setAuthenticated(false);
       } finally {
         setLoading(false);
@@ -68,7 +64,6 @@ export default function ListeningStats() {
         <p className="mt-2 text-xs font-semibold tracking-wider text-zinc-500 uppercase">
           Connect Spotify above to load your top streams
         </p>
-        {errorMsg && <p className="mt-1 text-[10px] text-zinc-600">{errorMsg}</p>}
       </div>
     );
   }
@@ -76,7 +71,7 @@ export default function ListeningStats() {
   if (tracks.length === 0) {
     return (
       <div className="my-8 text-center text-xs text-zinc-400">
-        Connected! Listening history is still warming up for this account.
+        Connected! No top streams available for this time range.
       </div>
     );
   }
