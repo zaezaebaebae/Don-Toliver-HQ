@@ -3,36 +3,36 @@
 import { useEffect, useState } from "react";
 
 export default function BirthdayGate() {
-  const [showGate, setShowGate] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
-    const hasSeen = localStorage.getItem("has_seen_birthday_gate");
-    if (!hasSeen) {
-      setShowGate(true);
+    const hasSeenGate = localStorage.getItem("has_seen_birthday_gate");
+    if (!hasSeenGate) {
+      setIsOpen(true);
     }
   }, []);
 
-  const handleEnter = () => {
+  const handleClose = () => {
     localStorage.setItem("has_seen_birthday_gate", "true");
-    setShowGate(false);
+    setIsOpen(false);
   };
 
-  if (!showGate) return null;
+  if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[99999] flex flex-col items-center justify-center bg-black p-6 text-center text-white">
-      <h1 className="text-4xl font-black tracking-wider text-red-600 md:text-6xl">
-        HAPPY BIRTHDAY 🎂
-      </h1>
-      <p className="mt-4 max-w-md text-lg text-gray-300">
-        Welcome to Don Toliver HQ. Your custom leak feed, discography tracker, and vault are unlocked.
-      </p>
-      <button
-        onClick={handleEnter}
-        className="mt-8 rounded-full bg-red-600 px-8 py-3 font-bold text-white transition hover:bg-red-700"
-      >
-        ENTER THE VAULT
-      </button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 backdrop-blur-md">
+      <div className="max-w-md rounded-2xl border border-zinc-800 bg-zinc-950 p-6 text-center shadow-2xl">
+        <h2 className="text-3xl font-black text-emerald-400 mb-4">HAPPY BIRTHDAY! ??</h2>
+        <p className="text-sm leading-relaxed text-zinc-300">
+          Happy Birthday Monkey!! I know this is coming to you very very late, trust me i feel horrible, but i learnt new things throughout this process of making this website. I hope you enjoy it and if anything i would like for us to make it even better together in some way shape or form. I love you endlessly and remember this is one of 3 gifts from me to you.
+        </p>
+        <button
+          onClick={handleClose}
+          className="mt-6 w-full rounded-full bg-emerald-500 py-3 text-xs font-bold uppercase tracking-wider text-black transition-all hover:bg-emerald-400"
+        >
+          ENTER THE VAULT
+        </button>
+      </div>
     </div>
   );
 }
